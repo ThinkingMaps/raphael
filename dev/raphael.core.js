@@ -1,5 +1,5 @@
 // ┌─────────────────────────────────────────────────────────────────────┐ \\
-// │ "Raphaël 2.1.0" - JavaScript Vector Library                         │ \\
+// │ "Raphaël 2.1.2" - JavaScript Vector Library                         │ \\
 // ├─────────────────────────────────────────────────────────────────────┤ \\
 // │ Copyright (c) 2008-2011 Dmitry Baranovskiy (http://raphaeljs.com)   │ \\
 // │ Copyright (c) 2008-2011 Sencha Labs (http://sencha.com)             │ \\
@@ -10,13 +10,13 @@
     // AMD support
     if (typeof define === "function" && define.amd) {
         // Define as an anonymous module
-        define(["."], function( eve ) {
+        define(["eve"], function( eve ) {
             return factory(glob, eve);
         });
     } else {
         // Browser globals (glob is window)
         // Raphael adds itself to window
-        factory(glob, glob.eve);
+        factory(glob, glob.eve || (typeof require == "function" && require('eve')) );
     }
 }(this, function (window, eve) {
     /*\
@@ -86,7 +86,7 @@
             }
         }
     }
-    R.version = "2.1.0";
+    R.version = "2.1.2";
     R.eve = eve;
     var loaded,
         separator = /[, ]+/,
@@ -126,7 +126,7 @@
              | var c = paper.circle(10, 10, 10).attr({hue: .45});
              | // or even like this:
              | c.animate({hue: 1}, 1e3);
-             | 
+             |
              | // You could also create custom attribute
              | // with multiple parameters:
              | paper.customAttributes.hsb = function (h, s, b) {
@@ -167,7 +167,7 @@
         objectToString = Object.prototype.toString,
         paper = {},
         push = "push",
-        ISURL = R._ISURL = /^url\(['"]?([^\)]+?)['"]?\)$/i,
+        ISURL = R._ISURL = /^url\(['"]?(.+?)['"]?\)$/i,
         colourRegExp = /^\s*((#[a-f\d]{6})|(#[a-f\d]{3})|rgba?\(\s*([\d\.]+%?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+%?(?:\s*,\s*[\d\.]+%?)?)\s*\)|hsba?\(\s*([\d\.]+(?:deg|\xb0|%)?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+(?:%?\s*,\s*[\d\.]+)?)%?\s*\)|hsla?\(\s*([\d\.]+(?:deg|\xb0|%)?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+(?:%?\s*,\s*[\d\.]+)?)%?\s*\))\s*$/i,
         isnan = {"NaN": 1, "Infinity": 1, "-Infinity": 1},
         bezierrg = /^(?:cubic-)?bezier\(([^,]+),([^,]+),([^,]+),([^\)]+)\)/,
@@ -392,7 +392,7 @@
      * Raphael.is
      [ method ]
      **
-     * Handfull replacement for `typeof` operator.
+     * Handful of replacements for `typeof` operator.
      > Parameters
      - o (…) any object or primitive
      - type (string) name of the type, i.e. “string”, “function”, “number”, etc.
@@ -414,7 +414,7 @@
     };
 
     function clone(obj) {
-        if (Object(obj) !== obj) {
+        if (typeof obj == "function" || Object(obj) !== obj) {
             return obj;
         }
         var res = new obj.constructor;
@@ -468,11 +468,11 @@
      **
      * Transform angle to degrees
      > Parameters
-     - deg (number) angle in radians
+     - rad (number) angle in radians
      = (number) angle in degrees.
     \*/
     R.deg = function (rad) {
-        return rad * 180 / PI % 360;
+        return Math.round ((rad * 180 / PI% 360)* 1000) / 1000;
     };
     /*\
      * Raphael.snapTo
@@ -691,8 +691,8 @@
         if (this.is(h, "object") && "h" in h && "s" in h && "b" in h) {
             v = h.b;
             s = h.s;
-            h = h.h;
             o = h.o;
+            h = h.h;
         }
         h *= 360;
         var R, G, B, X, C;
@@ -1447,8 +1447,8 @@
         }
         var l1 = bezlen.apply(0, bez1),
             l2 = bezlen.apply(0, bez2),
-            n1 = ~~(l1 / 5),
-            n2 = ~~(l2 / 5),
+            n1 = mmax(~~(l1 / 5), 1),
+            n2 = mmax(~~(l2 / 5), 1),
             dots1 = [],
             dots2 = [],
             xy = {},
@@ -1477,15 +1477,15 @@
                     xy[is.x.toFixed(4)] = is.y.toFixed(4);
                     var t1 = di.t + abs((is[ci] - di[ci]) / (di1[ci] - di[ci])) * (di1.t - di.t),
                         t2 = dj.t + abs((is[cj] - dj[cj]) / (dj1[cj] - dj[cj])) * (dj1.t - dj.t);
-                    if (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1) {
+                    if (t1 >= 0 && t1 <= 1.001 && t2 >= 0 && t2 <= 1.001) {
                         if (justCount) {
                             res++;
                         } else {
                             res.push({
                                 x: is.x,
                                 y: is.y,
-                                t1: t1,
-                                t2: t2
+                                t1: mmin(t1, 1),
+                                t2: mmin(t2, 1)
                             });
                         }
                     }
@@ -2013,12 +2013,12 @@
                 p2 = path2 && pathToAbsolute(path2),
                 attrs = {x: 0, y: 0, bx: 0, by: 0, X: 0, Y: 0, qx: null, qy: null},
                 attrs2 = {x: 0, y: 0, bx: 0, by: 0, X: 0, Y: 0, qx: null, qy: null},
-                processPath = function (path, d) {
-                    var nx, ny;
+                processPath = function (path, d, pcom) {
+                    var nx, ny, tq = {T:1, Q:1};
                     if (!path) {
                         return ["C", d.x, d.y, d.x, d.y, d.x, d.y];
                     }
-                    !(path[0] in {T:1, Q:1}) && (d.qx = d.qy = null);
+                    !(path[0] in tq) && (d.qx = d.qy = null);
                     switch (path[0]) {
                         case "M":
                             d.X = path[1];
@@ -2074,6 +2074,8 @@
                         pp[i].shift();
                         var pi = pp[i];
                         while (pi.length) {
+                            pcoms1[i]="A"; // if created multiple C:s, their original seg is saved
+                            p2 && (pcoms2[i]="A"); // the same as above
                             pp.splice(i++, 0, ["C"][concat](pi.splice(0, 6)));
                         }
                         pp.splice(i, 1);
@@ -2089,12 +2091,40 @@
                         a1.y = path1[i][2];
                         ii = mmax(p.length, p2 && p2.length || 0);
                     }
-                };
+                },
+                pcoms1 = [], // path commands of original path p
+                pcoms2 = [], // path commands of original path p2
+                pfirst = "", // temporary holder for original path command
+                pcom = ""; // holder for previous path command of original path
             for (var i = 0, ii = mmax(p.length, p2 && p2.length || 0); i < ii; i++) {
-                p[i] = processPath(p[i], attrs);
-                fixArc(p, i);
-                p2 && (p2[i] = processPath(p2[i], attrs2));
-                p2 && fixArc(p2, i);
+                p[i] && (pfirst = p[i][0]); // save current path command
+
+                if (pfirst != "C") // C is not saved yet, because it may be result of conversion
+                {
+                    pcoms1[i] = pfirst; // Save current path command
+                    i && ( pcom = pcoms1[i-1]); // Get previous path command pcom
+                }
+                p[i] = processPath(p[i], attrs, pcom); // Previous path command is inputted to processPath
+
+                if (pcoms1[i] != "A" && pfirst == "C") pcoms1[i] = "C"; // A is the only command
+                // which may produce multiple C:s
+                // so we have to make sure that C is also C in original path
+
+                fixArc(p, i); // fixArc adds also the right amount of A:s to pcoms1
+
+                if (p2) { // the same procedures is done to p2
+                    p2[i] && (pfirst = p2[i][0]);
+                    if (pfirst != "C")
+                    {
+                        pcoms2[i] = pfirst;
+                        i && (pcom = pcoms2[i-1]);
+                    }
+                    p2[i] = processPath(p2[i], attrs2, pcom);
+
+                    if (pcoms2[i]!="A" && pfirst=="C") pcoms2[i]="C";
+
+                    fixArc(p2, i);
+                }
                 fixM(p, p2, attrs, attrs2, i);
                 fixM(p2, p, attrs2, attrs, i);
                 var seg = p[i],
@@ -2703,26 +2733,6 @@
         };
     })(Matrix.prototype);
 
-    // WebKit rendering bug workaround method
-    var version = navigator.userAgent.match(/Version\/(.*?)\s/) || navigator.userAgent.match(/Chrome\/(\d+)/);
-    if ((navigator.vendor == "Apple Computer, Inc.") && (version && version[1] < 4 || navigator.platform.slice(0, 2) == "iP") ||
-        (navigator.vendor == "Google Inc." && version && version[1] < 8)) {
-        /*\
-         * Paper.safari
-         [ method ]
-         **
-         * There is an inconvenient rendering bug in Safari (WebKit):
-         * sometimes the rendering should be forced.
-         * This method should help with dealing with this bug.
-        \*/
-        paperproto.safari = function () {
-            var rect = this.rect(-99, -99, this.width + 99, this.height + 99).attr({stroke: "none"});
-            setTimeout(function () {rect.remove();});
-        };
-    } else {
-        paperproto.safari = fun;
-    }
-
     var preventDefault = function () {
         this.returnValue = false;
     },
@@ -2777,7 +2787,7 @@
                     obj.removeEventListener(type, f, false);
 
                     if (supportsTouch && touchMap[type])
-                        obj.removeEventListener(touchMap[type], f, false);
+                        obj.removeEventListener(touchMap[type], _f, false);
 
                     return true;
                 };
@@ -3107,7 +3117,7 @@
      [ method ]
      **
      * Adds or retrieves given value asociated with given key.
-     ** 
+     **
      * See also @Element.removeData
      > Parameters
      - key (string) key to store data
@@ -3215,8 +3225,8 @@
      - mcontext (object) #optional context for moving handler
      - scontext (object) #optional context for drag start handler
      - econtext (object) #optional context for drag end handler
-     * Additionaly following `drag` events will be triggered: `drag.start.<id>` on start, 
-     * `drag.end.<id>` on end and `drag.move.<id>` on every move. When element will be dragged over another element 
+     * Additionaly following `drag` events will be triggered: `drag.start.<id>` on start,
+     * `drag.end.<id>` on end and `drag.move.<id>` on every move. When element will be dragged over another element
      * `drag.over.<id>` will be fired as well.
      *
      * Start event and start handler will be called in specified context or in context of the element with following parameters:
@@ -3501,6 +3511,21 @@
         return out;
     };
     /*\
+     * Paper.getSize
+     [ method ]
+     **
+     * Obtains current paper actual size.
+     **
+     = (object)
+     \*/
+    paperproto.getSize = function () {
+        var container = this.canvas.parentNode;
+        return {
+            width: container.offsetWidth,
+            height: container.offsetHeight
+                };
+        };
+    /*\
      * Paper.setSize
      [ method ]
      **
@@ -3518,7 +3543,7 @@
      * Paper.setViewBox
      [ method ]
      **
-     * Sets the view box of the paper. Practically it gives you ability to zoom and pan whole paper surface by 
+     * Sets the view box of the paper. Practically it gives you ability to zoom and pan whole paper surface by
      * specifying new boundaries.
      **
      > Parameters
@@ -3991,7 +4016,7 @@
     elproto.getPath = function () {
         var path,
             getPath = R._getPath[this.type];
-        
+
         if (this.type == "text" || this.type == "set") {
             return;
         }
@@ -4234,7 +4259,6 @@
                     }
                 }
             }
-            R.svg && that && that.paper && that.paper.safari();
             animationElements.length && requestAnimFrame(animation);
         },
         upto255 = function (color) {
@@ -4277,8 +4301,8 @@
             }
         }
         return element;
-        // 
-        // 
+        //
+        //
         // var a = params ? R.animation(params, ms, easing, callback) : anim,
         //     status = element.status(anim);
         // return this.animate(a).status(a, status * anim.ms / a.ms);
@@ -4634,7 +4658,21 @@
             p[attr] = params[attr];
         }
         if (!json) {
-            return new Animation(params, ms);
+            // if percent-like syntax is used and end-of-all animation callback used
+            if(callback){
+                // find the last one
+                var lastKey = 0;
+                for(var i in params){
+                    var percent = toInt(i);
+                    if(params[has](i) && percent > lastKey){
+                        lastKey = percent;
+                    }
+                }
+                lastKey += '%';
+                // if already defined callback in the last keyframe, skip
+                !params[lastKey].callback && (params[lastKey].callback = callback);
+            }
+          return new Animation(params, ms);
         } else {
             easing && (p.easing = easing);
             callback && (p.callback = callback);
@@ -4906,7 +4944,7 @@
      * Set.clear
      [ method ]
      **
-     * Removeds all elements from the set
+     * Removes all elements from the set
     \*/
     setproto.clear = function () {
         while (this.length) {
@@ -5064,7 +5102,6 @@
         var isPointInside = false;
         this.forEach(function (el) {
             if (el.isPointInside(x, y)) {
-                console.log('runned');
                 isPointInside = true;
                 return false; // stop loop
             }
@@ -5384,6 +5421,11 @@
      | paper.set(paper.circle(100, 100, 20), paper.circle(110, 100, 20)).red();
     \*/
     R.st = setproto;
+
+    eve.on("raphael.DOMload", function () {
+        loaded = true;
+    });
+
     // Firefox <3.6 fix: http://webreflection.blogspot.com/2009/11/195-chars-to-help-lazy-loading.html
     (function (doc, loaded, f) {
         if (doc.readyState == null && doc.addEventListener){
@@ -5399,14 +5441,13 @@
         isLoaded();
     })(document, "DOMContentLoaded");
 
-    eve.on("raphael.DOMload", function () {
-        loaded = true;
-    });
-
     // EXPOSE
     // SVG and VML are appended just before the EXPOSE line
     // Even with AMD, Raphael should be defined globally
     oldRaphael.was ? (g.win.Raphael = R) : (Raphael = R);
 
+    if(typeof exports == "object"){
+        module.exports = R;
+    }
     return R;
 }));

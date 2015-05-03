@@ -1,7 +1,10 @@
 {
   "name": "raphael",
-  "version": "2.1.1",
+  "version": "2.1.4",
   "main": "raphael.js",
+  "dependencies": {
+    "eve": "git://github.com/adobe-webplatform/eve.git#eef80ed"
+  },
   "ignore": [
     "eve",
     "**/.*",

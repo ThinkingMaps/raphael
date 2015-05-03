@@ -1,3 +1,33 @@
+2.1.4 • 2015-03-09
+------------------
+
+  * Wrong position in ie7 when rotate image #612
+  * Gradients become black in some cases
+
+2.1.3 • 2015-02-03
+------------------
+
+  * Fix wrong variable used in VML setViewBox().
+  * Missing comma in file
+  * set-viewbox-variable fix by @TheCloudlessSky
+
+2.1.2 • 2015-08-26
+------------------
+
+  * isPointInside fix from @drbombay14
+  * Allow Raphael to work in pages with a Content Security Policy that disallows 'unsafe-eval'
+
+2.1.1 • 2013-08-11
+------------------
+
+  * Dragging Text under iOS By @vitorhsb
+  * Dev folder
+  * Fix to make IE9 display tooltips when setting the title attribute on an element. By @samcrang
+  * Fix Wrong position after scale path in IE. By @sarvaje
+  * isPointInside incorrectly caches the path used to calculate its value. By @lvanderbijl
+  * Raphael.path2curve does not honor original shape. By @timo22345
+  * IsPointInside fix for transformed paths
+
 2.1.0 • 2012-03-14
 ------------------
 

@@ -8,15 +8,22 @@ module.exports = function(grunt) {
     grunt.initConfig({
         // Metadata.
         pkg: pkg,
-        banner: grunt.file.read("copy.js").replace(/@VERSION/, pkg.version),
+        banner: grunt.file.read("dev/copy.js").replace(/@VERSION/, pkg.version),
         // Task configuration.
+        jshint: {
+            beforeconcat: ['dev/raphael.core.js', 'dev/raphael.svg.js', 'dev/raphael.vml.js'],
+            afterconcat: ['dist/raphael.js'],
+            "options": {
+                jshintrc: 'dev/.jshintrc'
+            }
+        },
         uglify: {
             options: {
                 banner: "<%= banner %>"
             },
             dist: {
                 src: "<%= build.dist.dest %>",
-                dest: "../raphael-min.js"
+                dest: "raphael-min.js"
             }
         },
         build: {
@@ -24,12 +31,12 @@ module.exports = function(grunt) {
                 banner: "<%= banner %>"
             },
             dist: {
-                dest: "../raphael.js",
+                dest: "raphael.js",
                 src: [
-                    "../eve/eve.js",
-                    "raphael.core.js",
-                    "raphael.svg.js",
-                    "raphael.vml.js"
+                    "node_modules/eve/eve.js",
+                    "dev/raphael.core.js",
+                    "dev/raphael.svg.js",
+                    "dev/raphael.vml.js"
                 ]
             }
         }
@@ -38,8 +45,9 @@ module.exports = function(grunt) {
 
     // These plugins provide necessary tasks.
     grunt.loadNpmTasks("grunt-contrib-uglify");
+    grunt.loadNpmTasks('grunt-contrib-jshint');
 
-    // Special concat/build task to handle Raphael's build requirements
+  // Special concat/build task to handle Raphael's build requirements
     grunt.registerMultiTask(
         "build",
         "Concatenate source, remove individual closures, embed version",
@@ -87,5 +95,5 @@ module.exports = function(grunt) {
         });
 
     // Default task.
-    grunt.registerTask("default", ["build", "uglify"]);
+    grunt.registerTask("default", ["build", /*"jshint",*/ "uglify"]); //Removed jshint because of too many errors, improving little by little...
 };
