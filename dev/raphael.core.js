@@ -844,19 +844,51 @@
         }
         return newf;
     }
+	
+	var imagesInfoCache = {};
+
+    function imageStartLoad(paper) {
+        if (!paper._imgInProgress)
+            paper._imgInProgress = 0;
+        paper._imgInProgress++;
+    }
+
+    function imageCompleteLoad(paper) {
+        if (!paper._imgInProgress)
+            return;
+        paper._imgInProgress--;
+        if (paper._imgInProgress === 0) {
+            eve('raphael.imagesLoaded', paper);
+        }
+    }
+
+    paperproto.hasIncompleteImages = function () {
+        return this._imgInProgress > 0;
+    }
 
     var preload = R._preload = function (src, f) {
+        // assume here that images never updated, new images are always uploaded with a new URI
+        var imageInfo = imagesInfoCache[src];
+        if (imageInfo) {
+            f.call(imageInfo);
+            return;
+        }
         var img = g.doc.createElement("img");
         img.style.cssText = "position:absolute;left:-9999em;top:-9999em";
         img.onload = function () {
-            f.call(this);
+            imageInfo = { offsetWidth: this.offsetWidth, offsetHeight: this.offsetHeight };
+            imagesInfoCache[src] = imageInfo;
+            f.call(imageInfo);
             this.onload = null;
             g.doc.body.removeChild(this);
+            imageCompleteLoad(paper);
         };
         img.onerror = function () {
             g.doc.body.removeChild(this);
+            imageCompleteLoad(paper);
         };
         g.doc.body.appendChild(img);
+        imageStartLoad(paper);
         img.src = src;
     };
 

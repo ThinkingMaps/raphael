@@ -471,29 +471,92 @@ window.Raphael && window.Raphael.svg && function(R) {
                         break;
                     case "fill":
                         var isURL = Str(value).match(R._ISURL);
-                        if (isURL) {
-                            el = $("pattern");
-                            var ig = $("image");
-                            el.id = R.createUUID();
-                            $(el, {x: 0, y: 0, patternUnits: "userSpaceOnUse", height: 1, width: 1});
-                            $(ig, {x: 0, y: 0, "xlink:href": isURL[1]});
-                            el.appendChild(ig);
+						if (isURL) {
+							var bgpattern = $("pattern");
+							var bgimage = $("image");
+							bgpattern.id = R.createUUID();
+							$(bgpattern, { patternContentUnits: "objectBoundingBox", height: 1, width: 1 });
 
-                            (function (el) {
-                                R._preload(isURL[1], function () {
-                                    var w = this.offsetWidth,
-                                        h = this.offsetHeight;
-                                    $(el, {width: w, height: h});
-                                    $(ig, {width: w, height: h});
-                                    o.paper.safari();
-                                });
-                            })(el);
-                            o.paper.defs.appendChild(el);
-                            $(node, {fill: "url(#" + el.id + ")"});
-                            o.pattern = el;
-                            o.pattern && updatePosition(o);
-                            break;
-                        }
+							(function (container, pattern, image) {
+								var calculateCenteredCoords = function (ow, oh, iw, ih) {
+									return [(ow - iw) / 2, (oh - ih) / 2, iw, ih];
+								};
+
+								var shrinkToFit = container.getAttribute('backgroundSize') === 'shrink';
+								container.setAttribute('backgroundImage', isURL[1]);
+								R._preload(o.paper, isURL[1], function () {
+									var imageWidth = this.offsetWidth, imageHeight = this.offsetHeight;
+									var isCircle = container.nodeName === 'circle';
+									var isRect = container.nodeName === 'rect';
+									var nodeWidth = 0, nodeHeight = 0;
+
+									if (isCircle) {
+										nodeWidth = nodeHeight = parseFloat(container.getAttribute('r')) * 2;
+									}
+									else if (isRect) {
+										nodeWidth = parseFloat(container.getAttribute('width'));
+										nodeHeight = parseFloat(container.getAttribute('height'));
+									}
+									else return;
+
+									var imageInside = nodeWidth >= imageWidth && nodeHeight >= imageHeight;
+									var objectInside = nodeWidth < imageWidth && nodeHeight < imageHeight;
+									var imageSize = null;
+									var patternRatio = null;
+									var patternViewBox = null;
+
+									if (imageInside) {
+										imageSize = calculateCenteredCoords(nodeWidth, nodeHeight, imageWidth, imageHeight);
+										if(isCircle)
+											for (var si = 0; si < 4; si++)
+												imageSize[si] = Math.round(imageSize[si]);
+										patternViewBox = "0 0 " + nodeWidth + " " + nodeHeight;
+									}
+									else {
+										if (isCircle) {
+											if (shrinkToFit) {
+												var k = imageHeight / imageWidth;
+												var b = nodeWidth / Math.sqrt(k * k + 1);
+												var relativeWidth = b / nodeWidth;
+
+												imageSize = [0.5 - relativeWidth / 2, 0, relativeWidth, 1];
+												patternViewBox = "0 0 1 1";
+											}
+											else {
+												imageSize = [0, 0, imageWidth, imageHeight];
+												if (objectInside)
+													patternRatio = "xMidYMid slice";
+												patternViewBox = "0 0 " + imageWidth + " " + imageHeight;
+											}
+										}
+										else { // rect
+											imageSize = [0, 0, imageWidth, imageHeight];
+											patternViewBox = "0 0 " + imageWidth + " " + imageHeight;
+
+											if (!shrinkToFit)
+												patternRatio = "xMidYMid slice";
+										}
+									}
+
+									if (imageSize != null)
+										$(image, { x: imageSize[0], y: imageSize[1], width: imageSize[2], height: imageSize[3] });
+									if (patternRatio != null)
+										$(bgpattern, { preserveAspectRatio: patternRatio });
+									if (patternViewBox != null)
+										$(bgpattern, { viewBox: patternViewBox });
+
+									$(image, { 'xlink:href': isURL[1] });
+									pattern.appendChild(image);
+									o.paper.safari();
+								});
+							})(node, bgpattern, bgimage);
+
+							o.paper.defs.appendChild(bgpattern);
+							$(node, { fill: "url(#" + bgpattern.id + ")" });
+							o.pattern = bgpattern;
+							o.pattern && updatePosition(o);
+							break;
+						}
                         var clr = R.getRGB(value);
                         if (!clr.error) {
                             delete params.gradient;
@@ -579,7 +642,12 @@ window.Raphael && window.Raphael.svg && function(R) {
             for (var i = 0, ii = texts.length; i < ii; i++) {
                 tspan = $("tspan");
                 i && $(tspan, {dy: fontSize * leading, x: a.x});
-                tspan.appendChild(R._g.doc.createTextNode(texts[i]));
+				var tspanText = texts[i];
+                if (tspanText.length === 0) {
+                    tspan.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xml:space", "preserve");
+                    tspanText = ' ';
+                }
+                tspan.appendChild(R._g.doc.createTextNode(tspanText));                
                 node.appendChild(tspan);
                 tspans[i] = tspan;
             }
