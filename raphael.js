@@ -1228,7 +1228,7 @@
         return this._imgInProgress > 0;
     }
 
-    var preload = R._preload = function (src, f) {
+    var preload = R._preload = function (paper, src, f) {
 		function imageStartLoad(paper) {
 			if (!paper._imgInProgress)
 				paper._imgInProgress = 0;
@@ -5963,7 +5963,7 @@
     },
     updatePosition = function (o) {
         var bbox = o.getBBox(1);
-        $(o.pattern, {patternTransform: o.matrix.invert() + " translate(" + bbox.x + "," + bbox.y + ")"});
+        //$(o.pattern, {patternTransform: o.matrix.invert() + " translate(" + bbox.x + "," + bbox.y + ")"});
     },
     addArrow = function (o, value, isEnd) {
         if (o.type == "path") {

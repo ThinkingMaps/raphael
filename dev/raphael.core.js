@@ -849,7 +849,7 @@
         return this._imgInProgress > 0;
     }
 
-    var preload = R._preload = function (src, f) {
+    var preload = R._preload = function (paper, src, f) {
 		function imageStartLoad(paper) {
 			if (!paper._imgInProgress)
 				paper._imgInProgress = 0;

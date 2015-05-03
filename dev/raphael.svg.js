@@ -138,7 +138,7 @@ window.Raphael && window.Raphael.svg && function(R) {
     },
     updatePosition = function (o) {
         var bbox = o.getBBox(1);
-        $(o.pattern, {patternTransform: o.matrix.invert() + " translate(" + bbox.x + "," + bbox.y + ")"});
+        //$(o.pattern, {patternTransform: o.matrix.invert() + " translate(" + bbox.x + "," + bbox.y + ")"});
     },
     addArrow = function (o, value, isEnd) {
         if (o.type == "path") {
