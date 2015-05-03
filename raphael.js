@@ -1224,29 +1224,28 @@
         return newf;
     }
 	
-	var imagesInfoCache = {};
-
-    function imageStartLoad(paper) {
-        if (!paper._imgInProgress)
-            paper._imgInProgress = 0;
-        paper._imgInProgress++;
-    }
-
-    function imageCompleteLoad(paper) {
-        if (!paper._imgInProgress)
-            return;
-        paper._imgInProgress--;
-        if (paper._imgInProgress === 0) {
-            eve('raphael.imagesLoaded', paper);
-        }
-    }
-
     paperproto.hasIncompleteImages = function () {
         return this._imgInProgress > 0;
     }
 
     var preload = R._preload = function (src, f) {
-        // assume here that images never updated, new images are always uploaded with a new URI
+		function imageStartLoad(paper) {
+			if (!paper._imgInProgress)
+				paper._imgInProgress = 0;
+			paper._imgInProgress++;
+		}
+
+		function imageCompleteLoad(paper) {
+			if (!paper._imgInProgress)
+				return;
+			paper._imgInProgress--;
+			if (paper._imgInProgress === 0) {
+				eve('raphael.imagesLoaded', paper);
+			}
+		}
+	
+        // assume here that images are never updated, new images are always uploaded with a new URI
+		var imagesInfoCache = R._preload.imagesInfoCache = R._preload.imagesInfoCache || {}
         var imageInfo = imagesInfoCache[src];
         if (imageInfo) {
             f.call(imageInfo);
