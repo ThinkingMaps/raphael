@@ -2822,9 +2822,9 @@
             dragi,
             j = drag.length;
         while (j--) {
+            dragi = drag[j];
             if (!dragi.el._drag) //This check is needed to avoid "TypeError: null is not an object (evaluating 'dragi.el._drag.id')"
                 continue;
-            dragi = drag[j];
             if (supportsTouch && e.touches) {
                 var i = e.touches.length,
                     touch;
