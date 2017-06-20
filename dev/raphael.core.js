@@ -3247,7 +3247,7 @@
     \*/
     elproto.drag = function (onmove, onstart, onend, move_scope, start_scope, end_scope) {
         function start(e) {
-            (e.originalEvent || e).preventDefault();
+            //(e.originalEvent || e).preventDefault(); NOTE: Removed to enable native events on SVG elements
             var x = e.clientX,
                 y = e.clientY,
                 scrollY = g.doc.documentElement.scrollTop || g.doc.body.scrollTop,
